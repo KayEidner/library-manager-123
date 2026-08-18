@@ -130,11 +130,35 @@ function clearRating() { document.querySelectorAll('input[name="rating"]').forEa
 function getRating() { const checked = document.querySelector('input[name="rating"]:checked'); return checked ? checked.value : ""; }
 function setRating(val) { clearRating(); if(val && val >= 1 && val <= 5) document.getElementById('star' + val).checked = true; }
 
+function initLanguageChips() {
+    document.querySelectorAll('.lang-chip').forEach(chip => {
+        chip.addEventListener('click', function(e) {
+            e.preventDefault();
+            const category = document.getElementById('category').value;
+            const isBook = category === 'Buch';
+            
+            if (isBook) {
+                if (this.classList.contains('active')) {
+                    this.classList.remove('active');
+                } else {
+                    document.querySelectorAll('.lang-chip').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                }
+            } else {
+                this.classList.toggle('active');
+            }
+        });
+    });
+}
+
 function updateDynamicFields() {
     const category = document.getElementById('category').value;
     const apiSearchBlock = document.getElementById('apiSearchBlock');
     const editionBlock = document.getElementById('editionBlock');
     const bookDetailsBlock = document.getElementById('bookDetailsBlock');
+    
+    const pagesBlock = document.getElementById('pagesBlock');
+    const languageBlock = document.getElementById('languageBlock');
     
     const lblCode = document.getElementById('codeLabel');
     const lblSubtitle = document.getElementById('dynamicSubtitleLabel');
@@ -143,13 +167,17 @@ function updateDynamicFields() {
     const lblYear = document.getElementById('dynamicYearLabel');
 
     lblYear.innerText = t('year_normal');
+    
+    const isBook = category === 'Buch';
+    const isMedia = category === 'Film' || category === 'Spiel';
 
-    if (category === 'Buch') {
+    if (isBook) {
         document.getElementById('t_h3_biblio').innerText = "1. " + t('h3_biblio_book');
         document.getElementById('t_h3_extended').innerText = "2. " + t('h3_ext_book');
         apiSearchBlock.style.display = 'block';
         editionBlock.style.display = 'block';
-        bookDetailsBlock.style.display = 'flex';
+        pagesBlock.style.display = 'block';
+        languageBlock.style.display = 'block';
         lblCode.innerText = t('label_isbn');
         document.getElementById('codeField').placeholder = t('placeholder_code');
         lblSubtitle.innerText = t('sub_book');
@@ -161,7 +189,8 @@ function updateDynamicFields() {
         document.getElementById('t_h3_extended').innerText = "2. " + t('h3_ext_movie');
         apiSearchBlock.style.display = 'block';
         editionBlock.style.display = 'none';
-        bookDetailsBlock.style.display = 'none';
+        pagesBlock.style.display = 'none';
+        languageBlock.style.display = 'block';
         lblCode.innerText = t('label_ean');
         document.getElementById('codeField').placeholder = t('placeholder_code');
         lblSubtitle.innerText = t('sub_film');
@@ -173,7 +202,8 @@ function updateDynamicFields() {
         document.getElementById('t_h3_extended').innerText = "2. " + t('h3_ext_game');
         apiSearchBlock.style.display = 'block';
         editionBlock.style.display = 'none';
-        bookDetailsBlock.style.display = 'none';
+        pagesBlock.style.display = 'none';
+        languageBlock.style.display = 'block';
         lblCode.innerText = t('label_ean');
         document.getElementById('codeField').placeholder = t('placeholder_code');
         lblSubtitle.innerText = t('sub_game');
@@ -185,7 +215,8 @@ function updateDynamicFields() {
         document.getElementById('t_h3_extended').innerText = "2. " + t('h3_ext_folk');
         apiSearchBlock.style.display = 'none';
         editionBlock.style.display = 'none';
-        bookDetailsBlock.style.display = 'none';
+        pagesBlock.style.display = 'none';
+        languageBlock.style.display = 'none';
         lblSubtitle.innerText = t('sub_folk');
         lblAuthor.innerText = t('auth_folk');
         lblPublisher.innerText = t('pub_folk');
@@ -196,7 +227,8 @@ function updateDynamicFields() {
         document.getElementById('t_h3_extended').innerText = "2. " + t('h3_ext_misc');
         apiSearchBlock.style.display = 'none';
         editionBlock.style.display = 'none';
-        bookDetailsBlock.style.display = 'none';
+        pagesBlock.style.display = 'none';
+        languageBlock.style.display = 'none';
         lblSubtitle.innerText = t('sub_misc');
         lblAuthor.innerText = t('auth_misc');
         lblPublisher.innerText = t('pub_misc');
@@ -297,6 +329,9 @@ async function saveItem() {
         if (existingItem && existingItem.date) existingDate = existingItem.date;
     }
 
+    const activeChips = Array.from(document.querySelectorAll('.lang-chip.active')).map(c => c.getAttribute('data-val'));
+    const selectedLanguages = activeChips.join(', ');
+
     const newItem = {
         id: state.currentEditId ? state.currentEditId : Date.now(), 
         barcode: barcode || "OHNE-ID",
@@ -311,7 +346,7 @@ async function saveItem() {
         tags: document.getElementById('tags').value.trim(),
         genre: document.getElementById('genre').value.trim(),
         pages: category === 'Buch' ? document.getElementById('pages').value.trim() : "",
-        language: category === 'Buch' ? document.getElementById('language').value.trim() : "",
+        language: selectedLanguages,
         description: document.getElementById('description').value.trim(),
         location: document.getElementById('location').value.trim(),
         shelf: document.getElementById('shelf').value.trim(),
@@ -329,7 +364,7 @@ async function saveItem() {
     await DB.saveItemToDB(newItem, state.currentImageData);
     await DB.loadAllItemsFromDB();
     clearForm();
-    document.getElementById('quickScan').focus(); 
+    document.getElementById('title').focus(); 
 }
 
 function clearForm() {
@@ -338,9 +373,11 @@ function clearForm() {
     const savedShelf = document.getElementById('shelf').value;
     const currentCategory = document.getElementById('category').value;
 
-    const fieldsToClear = ['barcode','codeField','title','subtitle','author','publisher','year','edition','tags','genre','pages','language','description','format','loanedTo','loanedDate','estimatedValue','notes'];
+    const fieldsToClear = ['barcode','codeField','title','subtitle','author','publisher','year','edition','tags','genre','pages','description','format','loanedTo','loanedDate','estimatedValue','notes'];
     fieldsToClear.forEach(id => document.getElementById(id).value = "");
     
+    document.querySelectorAll('.lang-chip').forEach(c => c.classList.remove('active'));
+
     document.getElementById('status').value = "Vorhanden";
     document.getElementById('condition').value = "Sehr gut / Wie neu";
     clearRating();
@@ -386,9 +423,18 @@ async function editItem(id) {
     document.getElementById('tags').value = item.tags || "";
     document.getElementById('genre').value = item.genre || "";
     document.getElementById('pages').value = item.pages || "";
-    document.getElementById('language').value = item.language || "";
     document.getElementById('description').value = item.description || "";
     
+    document.querySelectorAll('.lang-chip').forEach(c => c.classList.remove('active'));
+    if (item.language) {
+        const langs = item.language.split(', ');
+        document.querySelectorAll('.lang-chip').forEach(c => {
+            if (langs.includes(c.getAttribute('data-val'))) {
+                c.classList.add('active');
+            }
+        });
+    }
+
     document.getElementById('location').value = item.location || "";
     document.getElementById('shelf').value = item.shelf || "";
     document.getElementById('format').value = item.format || "";
@@ -521,6 +567,7 @@ function renderItems(resetLimit = false) {
         (item.tags && item.tags.toLowerCase().includes(query)) ||
         item.barcode.toLowerCase().includes(query) ||
         (item.shelf && item.shelf.toLowerCase().includes(query)) ||
+        (item.location && item.location.toLowerCase().includes(query)) || 
         item.category.toLowerCase().includes(query)
     );
 
@@ -651,15 +698,31 @@ document.getElementById('quickScan').addEventListener('keypress', function (e) {
         const val = this.value.trim();
         if (!val) return;
 
-        const isLocation = val.toUpperCase().startsWith('R-') || val.toUpperCase().startsWith('REG-') || val.toUpperCase().startsWith('F-') || val.toUpperCase().startsWith('FACH-');
+        const valUpper = val.toUpperCase();
+        // Erkennt R14, F03, R14F03, REG-1, FACH-3 etc.
+        const isLocation = (/^R\d+/i.test(val) || /^F\d+/i.test(val) || /^REG/i.test(val) || /^FACH/i.test(val) || valUpper.includes('F')) && !/^\d+$/.test(val);
+
         if (isLocation) {
-            if (state.currentAppMode === 'edit') document.getElementById('shelf').value = val.toUpperCase();
+            if (state.currentAppMode === 'edit') {
+                if (valUpper.includes('F') && valUpper.startsWith('R')) {
+                    const parts = valUpper.split('F');
+                    document.getElementById('location').value = parts[0]; 
+                    document.getElementById('shelf').value = valUpper; 
+                } else if (valUpper.startsWith('R') || valUpper.startsWith('REG')) {
+                    document.getElementById('location').value = valUpper;
+                } else {
+                    document.getElementById('shelf').value = valUpper;
+                }
+            }
+            
             const searchInput = document.getElementById('search');
-            searchInput.value = val.toUpperCase();
+            searchInput.value = valUpper;
             renderItems(true);
+            
             this.value = "";
-            this.placeholder = "Regal geladen! Nächsten Code scannen...";
+            this.placeholder = "Ort geladen! Zeige Bestand...";
             document.getElementById('t_section_inventory').scrollIntoView({ behavior: 'smooth' });
+            
             setTimeout(() => { this.placeholder = state.currentAppMode === 'view' ? t('placeholder_quickscan_view') : t('placeholder_quickscan'); }, 4000);
             return;
         }
@@ -698,7 +761,11 @@ document.getElementById('quickScan').addEventListener('keypress', function (e) {
                 document.getElementById('search').value = "";
                 renderItems(true);
             } else {
-                clearForm();
+                const isFormDirty = document.getElementById('title').value.trim() !== '' || document.getElementById('author').value.trim() !== '';
+                if (!isFormDirty) {
+                    clearForm();
+                }
+                
                 const cleanVal = val.replace(/[- ]/g, "");
                 const isEanIsbn = (cleanVal.length === 13 || cleanVal.length === 12 || cleanVal.length === 8 || (cleanVal.length === 10 && /^\d{9}[\dX]$/i.test(cleanVal)));
                 
@@ -715,13 +782,12 @@ document.getElementById('quickScan').addEventListener('keypress', function (e) {
     }
 });
 
+// Barcode nicht mehr ans Suchfeld übergeben, sondern zum nächsten logischen Feld
 document.getElementById('barcode').addEventListener('keypress', function (e) {
     if (e.key === 'Enter') {
         e.preventDefault();
         this.blur();
-        document.getElementById('quickScan').value = this.value;
-        this.value = "";
-        document.getElementById('quickScan').dispatchEvent(new KeyboardEvent('keypress', {'key': 'Enter'}));
+        document.getElementById('title').focus();
     }
 });
 
@@ -774,5 +840,6 @@ window.app = {
 
 // ---- App Start ----
 loadTranslations().then(() => {
+    initLanguageChips();
     DB.initDB(() => renderItems(true));
 });

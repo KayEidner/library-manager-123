@@ -53,7 +53,6 @@ async function fetchBook(cleanCode, title, uiCallback) {
             if (book.publisher) fillIfEmpty('publisher', book.publisher);
             if (book.publishedDate) fillIfEmpty('year', book.publishedDate.match(/\d{4}/)?.[0] || book.publishedDate);
             if (book.pageCount) fillIfEmpty('pages', book.pageCount);
-            if (book.language) fillIfEmpty('language', book.language);
             if (book.description) fillIfEmpty('description', book.description);
             if (book.imageLinks?.thumbnail && !state.currentImageData) {
                 uiCallback.setImage(book.imageLinks.thumbnail.replace('http:', 'https:'));
