@@ -363,6 +363,7 @@ async function saveItem() {
 
     await DB.saveItemToDB(newItem, state.currentImageData);
     await DB.loadAllItemsFromDB();
+    renderItems(true); 
     clearForm();
     document.getElementById('title').focus(); 
 }
