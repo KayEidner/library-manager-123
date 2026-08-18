@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title id="html_title">Sammlung</title>
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="apple-touch-icon" href="icon.png">
+  <meta name="theme-color" content="#121212">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+  <!-- Verweis auf die ausgelagerte CSS-Datei -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div id="lightbox" onclick="this.style.display='none'">
+  <img id="lightboxImg" src="">
+</div>
+
+<div id="cropModal">
+  <h2 style="margin-top:0;">Bild zuschneiden</h2>
+  <div class="crop-container">
+    <img id="cropTarget" src="" style="max-width: 100%; display: block;">
+  </div>
+  <div class="grid-2" style="margin-bottom: 20px;">
+    <button class="secondary" onclick="window.app.cancelCrop()">Abbrechen</button>
+    <button onclick="window.app.applyCrop()">Zuschneiden & Speichern</button>
+  </div>
+</div>
+
+<div class="container">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 8px;">
+    <h1 id="t_app_title" style="margin:0; font-size: 1.5rem;">📚 Sammlung</h1>
+    <div style="display: flex; gap: 6px;">
+      <select id="langSelect" style="width: auto; margin: 0; padding: 6px;" onchange="window.app.changeLanguage(this.value)">
+        <option value="de">🇩🇪 DE</option>
+        <option value="en">🇬🇧 EN</option>
+        <option value="fr">🇫🇷 FR</option>
+        <option value="es">🇪🇸 ES</option>
+        <option value="zh">🇨🇳 ZH</option>
+        <option value="ja">🇯🇵 JA</option>
+      </select>
+      <button class="secondary" style="width: auto; margin: 0; padding: 6px 12px; font-size: 0.85em;" onclick="window.app.toggleApiModal()" id="btn_omdb_key">🔑 API Keys</button>
+    </div>
+  </div>
+
+  <div class="card" id="apiSettingsModal">
+    <h2 id="t_modal_title">API Key Einstellungen</h2>
+    <p id="t_modal_info" style="font-size: 0.85em; color: var(--subtext); margin-top: 0;">Filme nutzen OMDb. Spiele nutzen IGDB (Twitch).</p>
+    
+    <label for="omdbKeyInput" id="t_label_omdb_key">OMDb API-Key (Filme):</label>
+    <input type="text" id="omdbKeyInput" placeholder="...">
+    
+    <label for="igdbClientIdInput" style="margin-top:16px;">IGDB Client-ID (Spiele):</label>
+    <input type="text" id="igdbClientIdInput" placeholder="...">
+    
+    <label for="igdbTokenInput">IGDB App Access Token (Bearer):</label>
+    <input type="text" id="igdbTokenInput" placeholder="ohne 'Bearer ' davor...">
+    
+    <button onclick="window.app.saveApiKeys()" id="t_btn_save_settings">Speichern</button>
+  </div>
+
+  <div class="card" style="border: 2px solid var(--accent);">
+    <h2 id="t_section_quickscan" style="margin-bottom: 8px;">⚡ Schnell-Scan</h2>
+    <input type="search" id="quickScan" enterkeyhint="search" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="EAN, ISBN oder Inventar-ID scannen..." style="font-size: 1.1em; padding: 12px; text-align: center; font-weight: bold;" autofocus>
+    
+    <div class="mode-switch">
+      <button id="btnModeView" onclick="window.app.setMode('view')">🔍 Abfragen</button>
+      <button id="btnModeEdit" class="active" onclick="window.app.setMode('edit')">✍️ Erfassen</button>
+    </div>
+  </div>
+
+  <div class="card" id="viewItemCard" style="display:none; border: 2px solid #4CAF50;">
+    <div style="display: flex; gap: 16px; align-items: flex-start;">
+      <img id="viewImage" src="" style="width: 100px; height: 140px; object-fit: cover; border-radius: 8px; background: #333; display:none; cursor: zoom-in;" title="Antippen zum Vergrößern">
+      <div style="flex-grow: 1;">
+        <h2 id="viewTitle" style="margin: 0; text-align: left; color: #fff; font-size: 1.3em;">Titel</h2>
+        <div id="viewSubtitle" style="color: var(--accent); font-size: 0.9em; margin-bottom: 8px; font-weight: bold;">Untertitel / Autor</div>
+        <p style="margin: 4px 0; font-size: 0.9em;"><strong>ID / Code:</strong> <span id="viewCode"></span></p>
+        <p style="margin: 4px 0; font-size: 0.9em;"><strong>Ort / Regal:</strong> <span id="viewLocation"></span></p>
+        <p style="margin: 4px 0; font-size: 0.9em;"><strong>Status:</strong> <span id="viewStatus"></span></p>
+        <p style="margin: 4px 0; font-size: 0.9em;"><strong>Wert:</strong> <span id="viewValue"></span></p>
+      </div>
+    </div>
+    <div id="viewDetails" style="margin-top: 12px; border-top: 1px solid #333; padding-top: 12px; font-size: 0.9em; line-height: 1.5; color: var(--subtext);"></div>
+    <button class="secondary" onclick="window.app.editFromView()" id="t_btn_edit_from_view" style="margin-top: 16px; width: 100%;">✏️ Bearbeiten</button>
+  </div>
+
+  <div class="card" id="mainFormCard">
+    <h2 id="t_section_capture">Katalogisierung & Erfassung</h2>
+    
+    <div class="grid-2" style="margin-bottom: 16px;">
+      <div>
+        <label for="category" id="t_label_category">Kategorie:</label>
+        <select id="category" onchange="window.app.updateDynamicFields()" style="border-color: var(--accent);">
+          <option value="Buch" id="t_cat_book">Buch</option>
+          <option value="Spiel" id="t_cat_game">Spiel / Konsolen</option>
+          <option value="Film" id="t_cat_movie">Film (DVD / Blu-ray)</option>
+          <option value="Volkskunst" id="t_cat_folk">Volkskunst / Deko</option>
+          <option value="Sonstiges" id="t_cat_misc">Sonstiges</option>
+        </select>
+      </div>
+      <div>
+        <label for="barcode" id="t_label_barcode">Inventar-Barcode:</label>
+        <input type="search" id="barcode" placeholder="..." enterkeyhint="next" autocomplete="off" autocorrect="off">
+      </div>
+    </div>
+
+    <h3 id="t_h3_biblio">1. Bibliografische Kerndaten</h3>
+    
+    <div id="apiSearchBlock">
+      <label id="codeLabel" for="codeField">ISBN / EAN:</label>
+      <div style="display: flex; gap: 8px; align-items: flex-start;">
+        <input type="search" inputmode="numeric" id="codeField" placeholder="..." enterkeyhint="search" autocomplete="off">
+        <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">
+          <button type="button" id="apiBtn" class="secondary" style="width: auto; margin: 0;" onclick="window.app.fetchCodeData()">API Suche</button>
+          <a id="amazonLink" href="#" target="_blank" style="display: none; background: #ff9900; color: #111; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-size: 0.85em; font-weight: bold; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">🛒 Amazon Suche</a>
+        </div>
+      </div>
+    </div>
+
+    <label for="title" id="t_label_title">Haupttitel:</label>
+    <input type="text" id="title" placeholder="...">
+
+    <label for="subtitle" id="dynamicSubtitleLabel">Untertitel:</label>
+    <input type="text" id="subtitle">
+
+    <label for="author" id="dynamicAuthorLabel">Autor / Urheber:</label>
+    <input type="text" id="author" placeholder="...">
+
+    <div class="grid-2">
+      <div>
+        <label for="publisher" id="dynamicPublisherLabel">Verlag:</label>
+        <input type="text" id="publisher">
+      </div>
+      <div>
+        <label for="year" id="dynamicYearLabel">Erscheinungsjahr:</label>
+        <input type="number" inputmode="numeric" id="year">
+      </div>
+    </div>
+
+    <div id="editionBlock">
+      <label for="edition" id="t_label_edition">Auflage:</label>
+      <input type="text" id="edition" placeholder="...">
+    </div>
+
+    <h3 id="t_h3_extended">2. Erweiterte Bibliotheksdaten</h3>
+    
+    <div class="grid-2">
+      <div>
+        <label for="genre" id="t_label_genre">Warengruppe / Genre:</label>
+        <input type="text" id="genre">
+      </div>
+      <div>
+        <label for="tags" id="t_label_tags">Schlagwörter (Tags):</label>
+        <input type="text" id="tags" placeholder="...">
+      </div>
+    </div>
+
+    <div class="grid-2" id="bookDetailsBlock">
+      <div>
+        <label for="pages" id="t_label_pages">Seitenanzahl:</label>
+        <input type="number" inputmode="numeric" id="pages">
+      </div>
+      <div>
+        <label for="language" id="t_label_language">Sprache:</label>
+        <input type="text" id="language" placeholder="z. B. de, en">
+      </div>
+    </div>
+
+    <label for="description" id="t_label_description">Beschreibung / Klappentext:</label>
+    <textarea id="description" rows="3"></textarea>
+
+    <h3 id="t_h3_local">3. Lokale Verwaltungsdaten</h3>
+
+    <div class="grid-2">
+      <div>
+        <label for="location" id="t_label_location">Physischer Standort:</label>
+        <input type="text" id="location" placeholder="...">
+      </div>
+      <div>
+        <label for="shelf" id="t_label_shelf">Regalnummer:</label>
+        <input type="text" id="shelf" placeholder="...">
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <label for="format" id="t_label_format">Medienformat:</label>
+        <input type="text" id="format" placeholder="...">
+      </div>
+      <div>
+        <label for="status" id="t_label_status">Besitzstatus:</label>
+        <select id="status" onchange="window.app.toggleLoanBlock(event)">
+          <option value="Vorhanden" id="t_stat_owned">Vorhanden</option>
+          <option value="Verliehen" id="t_stat_loaned">Verliehen</option>
+          <option value="Wunschliste" id="t_stat_wish">Wunschliste</option>
+          <option value="Aussortiert" id="t_stat_discarded">Aussortiert</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid-2" id="loanBlock">
+      <div>
+        <label for="loanedTo" id="t_label_loaned_to">Verliehen an:</label>
+        <input type="text" id="loanedTo">
+      </div>
+      <div>
+        <label for="loanedDate" id="t_label_loaned_date">Leihdatum:</label>
+        <input type="date" id="loanedDate">
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <label for="condition" id="t_label_condition">Zustand:</label>
+        <select id="condition">
+          <option value="Sehr gut / Wie neu" id="t_cond_new">Sehr gut / Wie neu</option>
+          <option value="Gut" id="t_cond_good">Gut</option>
+          <option value="Altersbedingter Zustand" id="t_cond_age">Altersbedingter Zustand</option>
+          <option value="Beschädigt / Unvollständig" id="t_cond_bad">Beschädigt / Unvollständig</option>
+        </select>
+      </div>
+      <div>
+        <label for="estimatedValue" id="t_label_value">Geschätzter Wert (€):</label>
+        <input type="number" inputmode="decimal" id="estimatedValue" step="0.01" placeholder="0.00">
+      </div>
+    </div>
+    
+    <label id="t_label_rating">Eigenes Rating:</label>
+    <div class="star-rating">
+      <button type="button" class="clear-rating" onclick="window.app.clearRating()">❌</button>
+      <input type="radio" id="star5" name="rating" value="5"><label for="star5">★</label>
+      <input type="radio" id="star4" name="rating" value="4"><label for="star4">★</label>
+      <input type="radio" id="star3" name="rating" value="3"><label for="star3">★</label>
+      <input type="radio" id="star2" name="rating" value="2"><label for="star2">★</label>
+      <input type="radio" id="star1" name="rating" value="1"><label for="star1">★</label>
+    </div>
+
+    <label for="notes" id="t_label_notes">Bemerkungen / Besonderheiten:</label>
+    <textarea id="notes" rows="2"></textarea>
+
+    <label for="imageInput" id="t_label_image">Foto (Cover / Zustand):</label>
+    <input type="file" id="imageInput" accept="image/*" capture="environment">
+    <img id="preview" src="" alt="Vorschau" style="max-width: 100%; max-height: 150px; display: none; margin-top: 8px; border-radius: 4px;">
+
+    <div class="checkbox-container">
+      <input type="checkbox" id="keepLocation" checked>
+      <label for="keepLocation" id="t_label_keep_location" style="margin: 0; cursor: pointer;">Raum & Regalnummer merken</label>
+    </div>
+
+    <button id="saveBtn" onclick="window.app.saveItem()">Katalogeintrag Speichern</button>
+  </div>
+
+  <div class="card">
+    <h2 id="t_section_backup">Katalogsuche & Backup</h2>
+    <input type="search" id="search" placeholder="Suche..." onkeyup="window.app.renderItems(true)">
+    
+    <div class="grid-3" style="margin-top: 8px;">
+      <button class="secondary" onclick="window.app.exportJSON()" id="t_btn_json_export">JSON Export</button>
+      <button class="secondary" onclick="document.getElementById('importInput').click()" id="t_btn_json_import">JSON Import</button>
+      <button class="secondary" onclick="window.app.exportCSV()" id="t_btn_csv_export">CSV</button>
+    </div>
+    <input type="file" id="importInput" style="display:none" accept=".json" onchange="window.app.importJSON(event)">
+  </div>
+
+  <h2 id="t_section_inventory">Bestand (<span id="count">0</span> <span id="t_text_objects">Objekte</span>)</h2>
+  <ul id="itemList" class="item-list"></ul>
+</div>
+
+<!-- Einstiegspunkt für ES6 Module -->
+<script type="module" src="js/app.js"></script>
+
+</body>
+</html>

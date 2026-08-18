@@ -1,0 +1,81 @@
+:root {
+  --bg: #121212;
+  --card: #1e1e1e;
+  --accent: #2196f3;
+  --text: #ffffff;
+  --subtext: #aaaaaa;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  margin: 0;
+  padding: 16px;
+  -webkit-tap-highlight-color: transparent;
+}
+h1, h2, h3 { text-align: center; color: var(--accent); margin-top: 0; }
+h3 { text-align: left; border-bottom: 1px solid #333; padding-bottom: 4px; margin-top: 24px; font-size: 0.95em; text-transform: uppercase; letter-spacing: 0.5px; color: #64b5f6; }
+
+.container { max-width: 650px; margin: 0 auto; }
+.card { background: var(--card); padding: 16px; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+
+label { display: block; margin-top: 10px; color: var(--subtext); font-size: 0.85em; font-weight: 500; }
+input, select, textarea, button { width: 100%; padding: 10px; margin-top: 4px; border-radius: 6px; border: 1px solid #333; background: #2a2a2a; color: #fff; box-sizing: border-box; font-size: 15px; }
+input:focus, select:focus, textarea:focus { border-color: var(--accent); outline: none; }
+
+input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
+
+button { background: var(--accent); border: none; font-weight: bold; cursor: pointer; margin-top: 16px; transition: background 0.3s, color 0.3s; }
+button.secondary { background: #444; }
+button.danger { background: #d32f2f; }
+button:disabled { opacity: 0.7; cursor: not-allowed; }
+
+.grid-2 { display: flex; gap: 8px; }
+.grid-2 > div { flex: 1; }
+.grid-3 { display: flex; gap: 8px; }
+.grid-3 > button { flex: 1; padding: 10px 4px; font-size: 0.85em; }
+
+.checkbox-container { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 0.85em; color: var(--subtext); }
+.checkbox-container input { width: auto; margin: 0; }
+
+.star-rating {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+}
+.star-rating input { display: none; }
+.star-rating label { font-size: 32px; color: #444; cursor: pointer; transition: color 0.2s; margin:0; line-height: 1; }
+.star-rating input:checked ~ label,
+.star-rating label:hover,
+.star-rating label:hover ~ label { color: #ffc107; }
+.clear-rating { background: transparent; border: none; color: #888; font-size: 14px; cursor: pointer; padding: 0; width: auto; margin-left: 10px; margin-top: 0; }
+.clear-rating:hover { color: #d32f2f; }
+
+.item-list { list-style: none; padding: 0; }
+.item-card { background: var(--card); padding: 12px; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 12px; flex-direction: column; }
+.item-card img { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; flex-shrink: 0; background: #333; }
+.item-info { flex-grow: 1; }
+.item-title { font-weight: bold; font-size: 1em; }
+.item-subtitle { font-size: 0.85em; color: #ccc; font-style: italic; }
+.item-author { color: var(--accent); font-size: 0.9em; margin-top: 2px; }
+.item-meta { font-size: 0.82em; color: var(--subtext); margin-top: 4px; line-height: 1.4; }
+
+#apiSettingsModal { display: none; border: 1px solid var(--accent); }
+.action-buttons { display: flex; flex-direction: row; width: 100%; gap: 8px; margin-top: 8px; padding-top: 12px; border-top: 1px solid #333; }
+.action-buttons button { flex: 1; margin: 0; padding: 8px 0; font-size: 1.1em; }
+
+.highlight-card { animation: highlightAnim 2s; }
+@keyframes highlightAnim { 0% { box-shadow: 0 0 15px var(--accent); } 100% { box-shadow: 0 4px 6px rgba(0,0,0,0.3); } }
+
+.mode-switch { display: flex; border-radius: 6px; overflow: hidden; margin-top: 12px; border: 1px solid #444; }
+.mode-switch button { flex: 1; margin: 0; border-radius: 0; background: #2a2a2a; border: none; color: var(--subtext); transition: 0.2s; }
+.mode-switch button.active { background: var(--accent); color: #fff; }
+
+#lightbox { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); align-items: center; justify-content: center; }
+#lightbox img { max-width: 95%; max-height: 95%; border-radius: 8px; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+
+#cropModal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: #121212; padding: 16px; flex-direction: column; box-sizing: border-box; }
+.crop-container { flex-grow: 1; background: #000; margin-bottom: 16px; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center;}
